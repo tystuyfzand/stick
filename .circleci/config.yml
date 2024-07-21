@@ -44,7 +44,7 @@ jobs:
         default: "1.9"
     docker:
       - image: "circleci/golang:<< parameters.version >>"
-    working_directory: "/go/src/github.com/tyler-sommer/stick"
+    working_directory: "/go/src/github.com/tystuyfzand/stick"
     environment:
       GO111MODULE: "on"
     steps:
@@ -57,7 +57,7 @@ jobs:
         default: "1.20"
     docker:
       - image: "cimg/go:<< parameters.version >>"
-    working_directory: "/home/circleci/go/src/github.com/tyler-sommer/stick"
+    working_directory: "/home/circleci/go/src/github.com/tystuyfzand/stick"
     environment:
       GO111MODULE: "on"
     steps:
@@ -66,7 +66,7 @@ jobs:
   build_latest:
     docker:
       - image: "cimg/go:1.20"
-    working_directory: "/home/circleci/go/src/github.com/tyler-sommer/stick"
+    working_directory: "/home/circleci/go/src/github.com/tystuyfzand/stick"
     environment:
       GO111MODULE: "on"
     steps:

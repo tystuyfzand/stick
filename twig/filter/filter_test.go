@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tyler-sommer/stick"
+	"github.com/tystuyfzand/stick"
 )
 
 func TestFilters(t *testing.T) {

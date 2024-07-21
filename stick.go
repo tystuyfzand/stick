@@ -1,10 +1,10 @@
-package stick // import "github.com/tyler-sommer/stick"
+package stick // import "github.com/tystuyfzand/stick"
 
 import (
 	"bytes"
 	"io"
 
-	"github.com/tyler-sommer/stick/parse"
+	"github.com/tystuyfzand/stick/parse"
 )
 
 // A Template represents a named template and its contents.
@@ -33,11 +33,12 @@ type Test func(ctx Context, val Value, args ...Value) bool
 
 // Env represents a configured Stick environment.
 type Env struct {
-	Loader    Loader              // Template loader.
-	Functions map[string]Func     // User-defined functions.
-	Filters   map[string]Filter   // User-defined filters.
-	Tests     map[string]Test     // User-defined tests.
-	Visitors  []parse.NodeVisitor // User-defined node visitors.
+	Loader    Loader                     // Template loader.
+	Functions map[string]Func            // User-defined functions.
+	Filters   map[string]Filter          // User-defined filters.
+	Tests     map[string]Test            // User-defined tests.
+	Visitors  []parse.NodeVisitor        // User-defined node visitors.
+	Parsers   map[string]parse.TagParser // User-defined tag parsers.
 }
 
 // An Extension is used to group related functions, filters, visitors, etc.

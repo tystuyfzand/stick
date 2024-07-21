@@ -2,8 +2,8 @@ package parse
 
 import "fmt"
 
-// parseExpr parses an expression.
-func (t *Tree) parseExpr() (Expr, error) {
+// ParseExpr parses an expression.
+func (t *Tree) ParseExpr() (Expr, error) {
 	expr, err := t.parseInnerExpr()
 	if err != nil {
 		return nil, err
@@ -17,8 +17,8 @@ func (t *Tree) parseExpr() (Expr, error) {
 // An outer expression is defined as a modification to an inner expression.
 // Examples include attribute accessing, filter application, or binary operations.
 func (t *Tree) parseOuterExpr(expr Expr) (Expr, error) {
-	switch nt := t.nextNonSpace(); nt.tokenType {
-	case tokenParensOpen:
+	switch nt := t.NextNonSpace(); nt.tokenType {
+	case TokenParensOpen:
 		switch name := expr.(type) {
 		case *NameExpr:
 			// TODO: This duplicates some code in parseInnerExpr, are both necessary?
@@ -27,7 +27,7 @@ func (t *Tree) parseOuterExpr(expr Expr) (Expr, error) {
 			return nil, newUnexpectedTokenError(nt)
 		}
 
-	case tokenArrayOpen, tokenPunctuation:
+	case TokenArrayOpen, TokenPunctuation:
 		switch nt.value {
 		case ".", "[": // Dot or array access
 			var args = make([]Expr, 0)
@@ -37,13 +37,13 @@ func (t *Tree) parseOuterExpr(expr Expr) (Expr, error) {
 			}
 
 			if nt.value == "[" {
-				ntt := t.peekNonSpace()
-				if ntt.tokenType != tokenArrayClose {
+				ntt := t.PeekNonSpace()
+				if ntt.tokenType != TokenArrayClose {
 					if attr, err = t.parseOuterExpr(attr); err != nil {
 						return nil, err
 					}
 				}
-				if _, err := t.expect(tokenArrayClose); err != nil {
+				if _, err := t.Expect(TokenArrayClose); err != nil {
 					return nil, err
 				}
 			} else {
@@ -67,7 +67,7 @@ func (t *Tree) parseOuterExpr(expr Expr) (Expr, error) {
 			return t.parseOuterExpr(NewGetAttrExpr(expr, attr, args, nt.Pos))
 
 		case "|": // Filter application
-			nx, err := t.parseExpr()
+			nx, err := t.ParseExpr()
 			if err != nil {
 				return nil, err
 			}
@@ -98,15 +98,15 @@ func (t *Tree) parseOuterExpr(expr Expr) (Expr, error) {
 			}
 
 		case "?": // Ternary if
-			tx, err := t.parseExpr()
+			tx, err := t.ParseExpr()
 			if err != nil {
 				return nil, err
 			}
-			_, err = t.expectValue(tokenPunctuation, ":")
+			_, err = t.ExpectValue(TokenPunctuation, ":")
 			if err != nil {
 				return nil, err
 			}
-			fx, err := t.parseExpr()
+			fx, err := t.ParseExpr()
 			if err != nil {
 				return nil, err
 			}
@@ -117,7 +117,7 @@ func (t *Tree) parseOuterExpr(expr Expr) (Expr, error) {
 			return expr, nil
 		}
 
-	case tokenOperator:
+	case TokenOperator:
 		op, ok := binaryOperators[nt.value]
 		if !ok {
 			return nil, newUnexpectedTokenError(nt)
@@ -131,7 +131,7 @@ func (t *Tree) parseOuterExpr(expr Expr) (Expr, error) {
 				return nil, err
 			}
 		} else {
-			right, err = t.parseExpr()
+			right, err = t.ParseExpr()
 			if err != nil {
 				return nil, err
 			}
@@ -164,7 +164,7 @@ func (t *Tree) parseRightTestOperand(prev *NameExpr) (*TestExpr, error) {
 	}
 	if prev == nil {
 		if r, ok := right.(*NameExpr); ok {
-			if nxt := t.peekNonSpace(); nxt.tokenType == tokenName {
+			if nxt := t.PeekNonSpace(); nxt.tokenType == TokenName {
 				return t.parseRightTestOperand(r)
 			}
 		}
@@ -189,56 +189,56 @@ func (t *Tree) parseRightTestOperand(prev *NameExpr) (*TestExpr, error) {
 // parseInnerExpr attempts to parse an inner expression.
 // An inner expression is defined as a cohesive expression, such as a literal.
 func (t *Tree) parseInnerExpr() (Expr, error) {
-	switch tok := t.nextNonSpace(); tok.tokenType {
-	case tokenEOF:
+	switch tok := t.NextNonSpace(); tok.tokenType {
+	case TokenEOF:
 		return nil, newUnexpectedEOFError(tok)
 
-	case tokenOperator:
+	case TokenOperator:
 		op, ok := unaryOperators[tok.value]
 		if !ok {
 			return nil, newUnexpectedTokenError(tok)
 		}
-		expr, err := t.parseExpr()
+		expr, err := t.ParseExpr()
 		if err != nil {
 			return nil, err
 		}
 		return NewUnaryExpr(op.Operator(), expr, tok.Pos), nil
 
-	case tokenParensOpen:
-		inner, err := t.parseExpr()
+	case TokenParensOpen:
+		inner, err := t.ParseExpr()
 		if err != nil {
 			return nil, err
 		}
-		_, err = t.expect(tokenParensClose)
+		_, err = t.Expect(TokenParensClose)
 		if err != nil {
 			return nil, err
 		}
 		return NewGroupExpr(inner, tok.Pos), nil
 
-	case tokenHashOpen:
+	case TokenHashOpen:
 		els := []*KeyValueExpr{}
 		for {
-			nxt := t.peek()
-			if nxt.tokenType == tokenHashClose {
-				t.next()
+			nxt := t.Peek()
+			if nxt.tokenType == TokenHashClose {
+				t.Next()
 				break
 			}
-			keyExpr, err := t.parseExpr()
+			keyExpr, err := t.ParseExpr()
 			if err != nil {
 				return nil, err
 			}
-			_, err = t.expectValue(tokenPunctuation, delimHashKeyValue)
+			_, err = t.ExpectValue(TokenPunctuation, delimHashKeyValue)
 			if err != nil {
 				return nil, err
 			}
-			valExpr, err := t.parseExpr()
+			valExpr, err := t.ParseExpr()
 			if err != nil {
 				return nil, err
 			}
 			els = append(els, NewKeyValueExpr(keyExpr, valExpr, nxt.Pos))
-			nxt = t.peek()
-			if nxt.tokenType == tokenPunctuation {
-				_, err := t.expectValue(tokenPunctuation, ",")
+			nxt = t.Peek()
+			if nxt.tokenType == TokenPunctuation {
+				_, err := t.ExpectValue(TokenPunctuation, ",")
 				if err != nil {
 					return nil, err
 				}
@@ -246,22 +246,22 @@ func (t *Tree) parseInnerExpr() (Expr, error) {
 		}
 		return NewHashExpr(tok.Pos, els...), nil
 
-	case tokenArrayOpen:
+	case TokenArrayOpen:
 		els := []Expr{}
 		for {
-			nxt := t.peek()
-			if nxt.tokenType == tokenArrayClose {
-				t.next()
+			nxt := t.Peek()
+			if nxt.tokenType == TokenArrayClose {
+				t.Next()
 				break
 			}
-			expr, err := t.parseExpr()
+			expr, err := t.ParseExpr()
 			if err != nil {
 				return nil, err
 			}
 			els = append(els, expr)
-			nxt = t.peek()
-			if nxt.tokenType == tokenPunctuation {
-				_, err := t.expectValue(tokenPunctuation, ",")
+			nxt = t.Peek()
+			if nxt.tokenType == TokenPunctuation {
+				_, err := t.ExpectValue(TokenPunctuation, ",")
 				if err != nil {
 					return nil, err
 				}
@@ -269,13 +269,13 @@ func (t *Tree) parseInnerExpr() (Expr, error) {
 		}
 		return NewArrayExpr(tok.Pos, els...), nil
 
-	case tokenNumber:
-		nxt := t.peek()
+	case TokenNumber:
+		nxt := t.Peek()
 		val := tok.value
-		if nxt.tokenType == tokenPunctuation && nxt.value == "." {
+		if nxt.tokenType == TokenPunctuation && nxt.value == "." {
 			val = val + "."
-			t.next()
-			nxt, err := t.expect(tokenNumber)
+			t.Next()
+			nxt, err := t.Expect(TokenNumber)
 			if err != nil {
 				return nil, err
 			}
@@ -283,7 +283,7 @@ func (t *Tree) parseInnerExpr() (Expr, error) {
 		}
 		return NewNumberExpr(val, tok.Pos), nil
 
-	case tokenName:
+	case TokenName:
 		switch tok.value {
 		case "null", "NULL", "none", "NONE":
 			return NewNullExpr(tok.Pos), nil
@@ -293,35 +293,35 @@ func (t *Tree) parseInnerExpr() (Expr, error) {
 			return NewBoolExpr(false, tok.Pos), nil
 		}
 		name := NewNameExpr(tok.value, tok.Pos)
-		nt := t.nextNonSpace()
-		if nt.tokenType == tokenParensOpen {
+		nt := t.NextNonSpace()
+		if nt.tokenType == TokenParensOpen {
 			// TODO: This duplicates some code in parseOuterExpr, are both necessary?
 			return t.parseFunc(name)
 		}
 		t.backup()
 		return name, nil
 
-	case tokenStringOpen:
+	case TokenStringOpen:
 		var exprs []Expr
 		for {
-			nxt, err := t.expect(tokenText, tokenInterpolateOpen, tokenStringClose)
+			nxt, err := t.Expect(TokenText, TokenInterpolateOpen, TokenStringClose)
 			if err != nil {
 				return nil, err
 			}
 			switch nxt.tokenType {
-			case tokenText:
+			case TokenText:
 				exprs = append(exprs, NewStringExpr(nxt.value, nxt.Pos))
-			case tokenInterpolateOpen:
-				exp, err := t.parseExpr()
+			case TokenInterpolateOpen:
+				exp, err := t.ParseExpr()
 				if err != nil {
 					return nil, err
 				}
-				_, err = t.expect(tokenInterpolateClose)
+				_, err = t.Expect(TokenInterpolateClose)
 				if err != nil {
 					return nil, err
 				}
 				exprs = append(exprs, exp)
-			case tokenStringClose:
+			case TokenStringClose:
 				ln := len(exprs)
 				if ln > 1 {
 					var res *BinaryExpr
@@ -347,15 +347,15 @@ func (t *Tree) parseInnerExpr() (Expr, error) {
 func (t *Tree) parseFunc(name *NameExpr) (Expr, error) {
 	var args []Expr
 	for {
-		switch tok := t.peek(); tok.tokenType {
-		case tokenEOF:
+		switch tok := t.Peek(); tok.tokenType {
+		case TokenEOF:
 			return nil, newUnexpectedEOFError(tok)
 
-		case tokenParensClose:
+		case TokenParensClose:
 		// do nothing
 
 		default:
-			argexp, err := t.parseExpr()
+			argexp, err := t.ParseExpr()
 			if err != nil {
 				return nil, err
 			}
@@ -363,20 +363,20 @@ func (t *Tree) parseFunc(name *NameExpr) (Expr, error) {
 			args = append(args, argexp)
 		}
 
-		switch tok := t.nextNonSpace(); tok.tokenType {
-		case tokenEOF:
+		switch tok := t.NextNonSpace(); tok.tokenType {
+		case TokenEOF:
 			return nil, newUnexpectedEOFError(tok)
 
-		case tokenPunctuation:
+		case TokenPunctuation:
 			if tok.value != "," {
 				return nil, newUnexpectedValueError(tok, ",")
 			}
 
-		case tokenParensClose:
+		case TokenParensClose:
 			return NewFuncExpr(name.Name, args, name.Pos), nil
 
 		default:
-			return nil, newUnexpectedTokenError(tok, tokenPunctuation, tokenParensClose)
+			return nil, newUnexpectedTokenError(tok, TokenPunctuation, TokenParensClose)
 		}
 	}
 }

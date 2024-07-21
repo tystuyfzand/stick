@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/tyler-sommer/stick"
+	"github.com/tystuyfzand/stick"
 )
 
 // An example of macro definition and usage.

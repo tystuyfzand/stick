@@ -1,5 +1,5 @@
 // Package filter provides built-in filters for Twig-compatibility.
-package filter // import "github.com/tyler-sommer/stick/twig/filter"
+package filter // import "github.com/tystuyfzand/stick/twig/filter"
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/tyler-sommer/stick"
+	"github.com/tystuyfzand/stick"
 )
 
 // builtInFilters returns a map containing all built-in Twig filters,

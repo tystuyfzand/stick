@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tyler-sommer/stick/parse"
+	"github.com/tystuyfzand/stick/parse"
 )
 
 // Type State represents the internal State of a template execution.
@@ -936,6 +936,7 @@ func (env *Env) load(name string) (*parse.Tree, error) {
 	}
 	tree := parse.NewNamedTree(name, tpl.Contents())
 	tree.Visitors = append(tree.Visitors, env.Visitors...)
+	tree.Parsers = env.Parsers
 	err = tree.Parse()
 	if err != nil {
 		return nil, err

@@ -16,52 +16,52 @@ func mkTok(t tokenType, val string) token {
 }
 
 var (
-	tEOF              = mkTok(tokenEOF, delimEOF)
-	tSpace            = mkTok(tokenWhitespace, " ")
-	tNewLine          = mkTok(tokenWhitespace, "\n")
-	tCommentOpen      = mkTok(tokenCommentOpen, delimOpenComment)
-	tCommentClose     = mkTok(tokenCommentClose, delimCloseComment)
-	tCommentTrimOpen  = mkTok(tokenCommentOpen, delimOpenComment+delimTrimWhitespace)
-	tCommentTrimClose = mkTok(tokenCommentClose, delimTrimWhitespace+delimCloseComment)
-	tTagOpen          = mkTok(tokenTagOpen, delimOpenTag)
-	tTagClose         = mkTok(tokenTagClose, delimCloseTag)
-	tTagTrimOpen      = mkTok(tokenTagOpen, delimOpenTag+delimTrimWhitespace)
-	tTagTrimClose     = mkTok(tokenTagClose, delimTrimWhitespace+delimCloseTag)
-	tPrintOpen        = mkTok(tokenPrintOpen, delimOpenPrint)
-	tPrintClose       = mkTok(tokenPrintClose, delimClosePrint)
-	tPrintTrimOpen    = mkTok(tokenPrintOpen, delimOpenPrint+delimTrimWhitespace)
-	tPrintTrimClose   = mkTok(tokenPrintClose, delimTrimWhitespace+delimClosePrint)
-	tDblStringOpen    = mkTok(tokenStringOpen, "\"")
-	tDblStringClose   = mkTok(tokenStringClose, "\"")
-	tStringOpen       = mkTok(tokenStringOpen, "'")
-	tStringClose      = mkTok(tokenStringClose, "'")
-	tInterpolateOpen  = mkTok(tokenInterpolateOpen, delimOpenInterpolate)
-	tInterpolateClose = mkTok(tokenInterpolateClose, delimCloseInterpolate)
-	tParensOpen       = mkTok(tokenParensOpen, "(")
-	tParensClose      = mkTok(tokenParensClose, ")")
+	tEOF              = mkTok(TokenEOF, delimEOF)
+	tSpace            = mkTok(TokenWhitespace, " ")
+	tNewLine          = mkTok(TokenWhitespace, "\n")
+	tCommentOpen      = mkTok(TokenCommentOpen, delimOpenComment)
+	tCommentClose     = mkTok(TokenCommentClose, delimCloseComment)
+	tCommentTrimOpen  = mkTok(TokenCommentOpen, delimOpenComment+delimTrimWhitespace)
+	tCommentTrimClose = mkTok(TokenCommentClose, delimTrimWhitespace+delimCloseComment)
+	tTagOpen          = mkTok(TokenTagOpen, delimOpenTag)
+	tTagClose         = mkTok(TokenTagClose, delimCloseTag)
+	tTagTrimOpen      = mkTok(TokenTagOpen, delimOpenTag+delimTrimWhitespace)
+	tTagTrimClose     = mkTok(TokenTagClose, delimTrimWhitespace+delimCloseTag)
+	tPrintOpen        = mkTok(TokenPrintOpen, delimOpenPrint)
+	tPrintClose       = mkTok(TokenPrintClose, delimClosePrint)
+	tPrintTrimOpen    = mkTok(TokenPrintOpen, delimOpenPrint+delimTrimWhitespace)
+	tPrintTrimClose   = mkTok(TokenPrintClose, delimTrimWhitespace+delimClosePrint)
+	tDblStringOpen    = mkTok(TokenStringOpen, "\"")
+	tDblStringClose   = mkTok(TokenStringClose, "\"")
+	tStringOpen       = mkTok(TokenStringOpen, "'")
+	tStringClose      = mkTok(TokenStringClose, "'")
+	tInterpolateOpen  = mkTok(TokenInterpolateOpen, delimOpenInterpolate)
+	tInterpolateClose = mkTok(TokenInterpolateClose, delimCloseInterpolate)
+	tParensOpen       = mkTok(TokenParensOpen, "(")
+	tParensClose      = mkTok(TokenParensClose, ")")
 )
 
 var lexTests = []lexTest{
 	{"empty", "", []token{tEOF}},
 
 	{"comment", "Some text{# Hello there #}", []token{
-		mkTok(tokenText, "Some text"),
+		mkTok(TokenText, "Some text"),
 		tCommentOpen,
-		mkTok(tokenText, " Hello there "),
+		mkTok(TokenText, " Hello there "),
 		tCommentClose,
 		tEOF,
 	}},
 
 	{"unclosed comment", "{# Hello there", []token{
 		tCommentOpen,
-		mkTok(tokenText, " Hello there"),
-		mkTok(tokenError, "expected comment close"),
+		mkTok(TokenText, " Hello there"),
+		mkTok(TokenError, "expected comment close"),
 	}},
 
 	{"number", "{{ 5 }}", []token{
 		tPrintOpen,
 		tSpace,
-		mkTok(tokenNumber, "5"),
+		mkTok(TokenNumber, "5"),
 		tSpace,
 		tPrintClose,
 		tEOF,
@@ -70,22 +70,22 @@ var lexTests = []lexTest{
 	{"operator", "{{\n5 == 4 ? 'Yes' : 'No'\n}}", []token{
 		tPrintOpen,
 		tNewLine,
-		mkTok(tokenNumber, "5"),
+		mkTok(TokenNumber, "5"),
 		tSpace,
-		mkTok(tokenOperator, "=="),
+		mkTok(TokenOperator, "=="),
 		tSpace,
-		mkTok(tokenNumber, "4"),
+		mkTok(TokenNumber, "4"),
 		tSpace,
-		mkTok(tokenPunctuation, "?"),
+		mkTok(TokenPunctuation, "?"),
 		tSpace,
 		tStringOpen,
-		mkTok(tokenText, "Yes"),
+		mkTok(TokenText, "Yes"),
 		tStringClose,
 		tSpace,
-		mkTok(tokenPunctuation, ":"),
+		mkTok(TokenPunctuation, ":"),
 		tSpace,
 		tStringOpen,
-		mkTok(tokenText, "No"),
+		mkTok(TokenText, "No"),
 		tStringClose,
 		tNewLine,
 		tPrintClose,
@@ -95,7 +95,7 @@ var lexTests = []lexTest{
 	{"string with operator prefix", "{{ orange }}", []token{
 		tPrintOpen,
 		tSpace,
-		mkTok(tokenName, "orange"),
+		mkTok(TokenName, "orange"),
 		tSpace,
 		tPrintClose,
 		tEOF,
@@ -104,15 +104,15 @@ var lexTests = []lexTest{
 	{"power and multiply", "{{ 1 ** 10 * 5 }}", []token{
 		tPrintOpen,
 		tSpace,
-		mkTok(tokenNumber, "1"),
+		mkTok(TokenNumber, "1"),
 		tSpace,
-		mkTok(tokenOperator, "**"),
+		mkTok(TokenOperator, "**"),
 		tSpace,
-		mkTok(tokenNumber, "10"),
+		mkTok(TokenNumber, "10"),
 		tSpace,
-		mkTok(tokenOperator, "*"),
+		mkTok(TokenOperator, "*"),
 		tSpace,
-		mkTok(tokenNumber, "5"),
+		mkTok(TokenNumber, "5"),
 		tSpace,
 		tPrintClose,
 		tEOF,
@@ -121,15 +121,15 @@ var lexTests = []lexTest{
 	{"div and floordiv", "{{ 10 // 4 / 2 }}", []token{
 		tPrintOpen,
 		tSpace,
-		mkTok(tokenNumber, "10"),
+		mkTok(TokenNumber, "10"),
 		tSpace,
-		mkTok(tokenOperator, "//"),
+		mkTok(TokenOperator, "//"),
 		tSpace,
-		mkTok(tokenNumber, "4"),
+		mkTok(TokenNumber, "4"),
 		tSpace,
-		mkTok(tokenOperator, "/"),
+		mkTok(TokenOperator, "/"),
 		tSpace,
-		mkTok(tokenNumber, "2"),
+		mkTok(TokenNumber, "2"),
 		tSpace,
 		tPrintClose,
 		tEOF,
@@ -138,19 +138,19 @@ var lexTests = []lexTest{
 	{"is and is not", "{{ 1 is not 10 and 5 is 5 }}", []token{
 		tPrintOpen,
 		tSpace,
-		mkTok(tokenNumber, "1"),
+		mkTok(TokenNumber, "1"),
 		tSpace,
-		mkTok(tokenOperator, "is not"),
+		mkTok(TokenOperator, "is not"),
 		tSpace,
-		mkTok(tokenNumber, "10"),
+		mkTok(TokenNumber, "10"),
 		tSpace,
-		mkTok(tokenOperator, "and"),
+		mkTok(TokenOperator, "and"),
 		tSpace,
-		mkTok(tokenNumber, "5"),
+		mkTok(TokenNumber, "5"),
 		tSpace,
-		mkTok(tokenOperator, "is"),
+		mkTok(TokenOperator, "is"),
 		tSpace,
-		mkTok(tokenNumber, "5"),
+		mkTok(TokenNumber, "5"),
 		tSpace,
 		tPrintClose,
 		tEOF,
@@ -159,11 +159,11 @@ var lexTests = []lexTest{
 	{"word operators", "{{ name not in data }}", []token{
 		tPrintOpen,
 		tSpace,
-		mkTok(tokenName, "name"),
+		mkTok(TokenName, "name"),
 		tSpace,
-		mkTok(tokenOperator, "not in"),
+		mkTok(TokenOperator, "not in"),
 		tSpace,
-		mkTok(tokenName, "data"),
+		mkTok(TokenName, "data"),
 		tSpace,
 		tPrintClose,
 		tEOF,
@@ -172,9 +172,9 @@ var lexTests = []lexTest{
 	{"unary not operator", "{{ not 100 }}", []token{
 		tPrintOpen,
 		tSpace,
-		mkTok(tokenOperator, "not"),
+		mkTok(TokenOperator, "not"),
 		tSpace,
-		mkTok(tokenNumber, "100"),
+		mkTok(TokenNumber, "100"),
 		tSpace,
 		tPrintClose,
 		tEOF,
@@ -183,30 +183,30 @@ var lexTests = []lexTest{
 	{"unary negation operator", "{{ -100 }}", []token{
 		tPrintOpen,
 		tSpace,
-		mkTok(tokenOperator, "-"),
-		mkTok(tokenNumber, "100"),
+		mkTok(TokenOperator, "-"),
+		mkTok(TokenNumber, "100"),
 		tSpace,
 		tPrintClose,
 		tEOF,
 	}},
 
 	{"text", "<html><head></head></html>", []token{
-		mkTok(tokenText, "<html><head></head></html>"),
+		mkTok(TokenText, "<html><head></head></html>"),
 		tEOF,
 	}},
 
 	{"simple block", "{% block test %}Some text{% endblock %}", []token{
 		tTagOpen,
 		tSpace,
-		mkTok(tokenName, "block"),
+		mkTok(TokenName, "block"),
 		tSpace,
-		mkTok(tokenName, "test"),
+		mkTok(TokenName, "test"),
 		tSpace,
 		tTagClose,
-		mkTok(tokenText, "Some text"),
+		mkTok(TokenText, "Some text"),
 		tTagOpen,
 		tSpace,
-		mkTok(tokenName, "endblock"),
+		mkTok(TokenName, "endblock"),
 		tSpace,
 		tTagClose,
 		tEOF,
@@ -216,7 +216,7 @@ var lexTests = []lexTest{
 		tPrintOpen,
 		tSpace,
 		tDblStringOpen,
-		mkTok(tokenText, "this is a test"),
+		mkTok(TokenText, "this is a test"),
 		tDblStringClose,
 		tSpace,
 		tPrintClose,
@@ -227,28 +227,28 @@ var lexTests = []lexTest{
 		tPrintOpen,
 		tSpace,
 		tDblStringOpen,
-		mkTok(tokenError, "unclosed string"),
+		mkTok(TokenError, "unclosed string"),
 	}},
 
 	{"unclosed parens", "{{ (test + 5 }}", []token{
 		tPrintOpen,
 		tSpace,
 		tParensOpen,
-		mkTok(tokenName, "test"),
+		mkTok(TokenName, "test"),
 		tSpace,
-		mkTok(tokenOperator, "+"),
+		mkTok(TokenOperator, "+"),
 		tSpace,
-		mkTok(tokenNumber, "5"),
+		mkTok(TokenNumber, "5"),
 		tSpace,
-		mkTok(tokenError, "unclosed parenthesis"),
+		mkTok(TokenError, "unclosed parenthesis"),
 	}},
 
 	{"unclosed tag (block)", "{% block test %}", []token{
 		tTagOpen,
 		tSpace,
-		mkTok(tokenName, "block"),
+		mkTok(TokenName, "block"),
 		tSpace,
-		mkTok(tokenName, "test"),
+		mkTok(TokenName, "test"),
 		tSpace,
 		tTagClose,
 		tEOF,
@@ -257,9 +257,9 @@ var lexTests = []lexTest{
 	{"name with underscore", "{% block additional_javascripts %}", []token{
 		tTagOpen,
 		tSpace,
-		mkTok(tokenName, "block"),
+		mkTok(TokenName, "block"),
 		tSpace,
-		mkTok(tokenName, "additional_javascripts"),
+		mkTok(TokenName, "additional_javascripts"),
 		tSpace,
 		tTagClose,
 		tEOF,
@@ -269,9 +269,9 @@ var lexTests = []lexTest{
 		tPrintOpen,
 		tSpace,
 		tDblStringOpen,
-		mkTok(tokenText, "Hello, "),
+		mkTok(TokenText, "Hello, "),
 		tInterpolateOpen,
-		mkTok(tokenName, "name"),
+		mkTok(TokenName, "name"),
 		tInterpolateClose,
 		tDblStringClose,
 		tSpace,
@@ -283,13 +283,13 @@ var lexTests = []lexTest{
 		tPrintOpen,
 		tSpace,
 		tDblStringOpen,
-		mkTok(tokenText, "Item #: "),
+		mkTok(TokenText, "Item #: "),
 		tInterpolateOpen,
-		mkTok(tokenName, "item"),
-		mkTok(tokenPunctuation, "."),
-		mkTok(tokenName, "id"),
+		mkTok(TokenName, "item"),
+		mkTok(TokenPunctuation, "."),
+		mkTok(TokenName, "id"),
 		tInterpolateClose,
-		mkTok(tokenText, "<br>"),
+		mkTok(TokenText, "<br>"),
 		tDblStringClose,
 		tSpace,
 		tPrintClose,
@@ -299,7 +299,7 @@ var lexTests = []lexTest{
 	{"whitespace control print", `{{- test -}}`, []token{
 		tPrintTrimOpen,
 		tSpace,
-		mkTok(tokenName, "test"),
+		mkTok(TokenName, "test"),
 		tSpace,
 		tPrintTrimClose,
 		tEOF,
@@ -308,7 +308,7 @@ var lexTests = []lexTest{
 	{"whitespace control tag", `{%- test -%}`, []token{
 		tTagTrimOpen,
 		tSpace,
-		mkTok(tokenName, "test"),
+		mkTok(TokenName, "test"),
 		tSpace,
 		tTagTrimClose,
 		tEOF,
@@ -316,7 +316,7 @@ var lexTests = []lexTest{
 
 	{"whitespace control comment", `{#- test -#}`, []token{
 		tCommentTrimOpen,
-		mkTok(tokenText, " test "),
+		mkTok(TokenText, " test "),
 		tCommentTrimClose,
 		tEOF,
 	}},
@@ -328,7 +328,7 @@ func collect(t *lexTest) (tokens []token) {
 	for {
 		tok := lex.nextToken()
 		tokens = append(tokens, tok)
-		if tok.tokenType == tokenEOF || tok.tokenType == tokenError {
+		if tok.tokenType == TokenEOF || tok.tokenType == TokenError {
 			break
 		}
 	}

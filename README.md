@@ -2,7 +2,7 @@ Stick
 =====
 
 [![CircleCI](https://circleci.com/gh/tyler-sommer/stick/tree/main.svg?style=shield)](https://circleci.com/gh/tyler-sommer/stick/tree/main)
-[![GoDoc](https://godoc.org/github.com/tyler-sommer/stick?status.svg)](https://godoc.org/github.com/tyler-sommer/stick)
+[![GoDoc](https://godoc.org/github.com/tystuyfzand/stick?status.svg)](https://godoc.org/github.com/tystuyfzand/stick)
 
 A Go language port of the [Twig](http://twig.sensiolabs.org/) templating engine. 
 
@@ -13,13 +13,13 @@ Overview
 This project is split across two parts.
 
 Package
-[`github.com/tyler-sommer/stick`](https://github.com/tyler-sommer/stick)
+[`github.com/tystuyfzand/stick`](https://github.com/tystuyfzand/stick)
 is a Twig template parser and executor. It provides the core
 functionality and offers many of the same extension points as Twig like
 functions, filters, node visitors, etc.
 
 Package
-[`github.com/tyler-sommer/stick/twig`](https://github.com/tyler-sommer/stick/tree/master/twig)
+[`github.com/tystuyfzand/stick/twig`](https://github.com/tystuyfzand/stick/tree/master/twig)
 contains extensions to provide the most Twig-like experience for
 template writers. It aims to feature the same functions, filters, etc.
 to be closely Twig-compatible.
@@ -51,7 +51,7 @@ Installation
 Stick is intended to be used as a library. The recommended way to install the library is using `go get`.
 
 ```bash
-go get -u github.com/tyler-sommer/stick
+go get -u github.com/tystuyfzand/stick
 ```
 
 
@@ -67,7 +67,7 @@ import (
 	"log"
 	"os"
     
-	"github.com/tyler-sommer/stick"
+	"github.com/tystuyfzand/stick"
 )
 
 func main() {
@@ -78,13 +78,13 @@ func main() {
 }
 ```
 
-See [godoc for more information](https://pkg.go.dev/github.com/tyler-sommer/stick).
+See [godoc for more information](https://pkg.go.dev/github.com/tystuyfzand/stick).
 
 
 To do
 -----
 
-- [x] Autoescaping (see: [Twig compatibility](https://github.com/tyler-sommer/stick/blob/master/twig))
+- [x] Autoescaping (see: [Twig compatibility](https://github.com/tystuyfzand/stick/blob/master/twig))
 - [ ] Whitespace control
 - [ ] Improve error reporting
 

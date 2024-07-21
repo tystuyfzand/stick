@@ -3,9 +3,9 @@ package twig
 import (
 	"strings"
 
-	"github.com/tyler-sommer/stick"
-	"github.com/tyler-sommer/stick/parse"
-	"github.com/tyler-sommer/stick/twig/escape"
+	"github.com/tystuyfzand/stick"
+	"github.com/tystuyfzand/stick/parse"
+	"github.com/tystuyfzand/stick/twig/escape"
 )
 
 // An Escaper returns the escaped input.

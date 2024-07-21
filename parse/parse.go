@@ -1,6 +1,6 @@
 // Package parse handles transforming Stick source code
 // into AST for further processing.
-package parse // import "github.com/tyler-sommer/stick/parse"
+package parse // import "github.com/tystuyfzand/stick/parse"
 
 import (
 	"bytes"
@@ -27,6 +27,7 @@ type Tree struct {
 	Name string // A name identifying this tree; the template name.
 
 	Visitors []NodeVisitor
+	Parsers  map[string]TagParser
 }
 
 // NewTree creates a new parser Tree, ready for use.
@@ -87,20 +88,20 @@ func (t *Tree) enrichError(err error) error {
 	return err
 }
 
-// peek returns the next unread token without advancing the internal cursor.
-func (t *Tree) peek() token {
-	tok := t.next()
+// Peek returns the Next unread token without advancing the internal cursor.
+func (t *Tree) Peek() token {
+	tok := t.Next()
 	t.backup()
 
 	return tok
 }
 
-// peek returns the next unread, non-space token without advancing the internal cursor.
-func (t *Tree) peekNonSpace() token {
+// PeekNonSpace returns the Next unread, non-space token without advancing the internal cursor.
+func (t *Tree) PeekNonSpace() token {
 	var next token
 	for {
-		next = t.next()
-		if next.tokenType != tokenWhitespace {
+		next = t.Next()
+		if next.tokenType != TokenWhitespace {
 			t.backup()
 			return next
 		}
@@ -125,8 +126,8 @@ func (t *Tree) backup3() {
 	t.backup()
 }
 
-// next returns the next unread token and advances the internal cursor by one.
-func (t *Tree) next() token {
+// Next returns the Next unread token and advances the internal cursor by one.
+func (t *Tree) Next() token {
 	var tok token
 	if len(t.unread) > 0 {
 		tok, t.unread = t.unread[len(t.unread)-1], t.unread[:len(t.unread)-1]
@@ -139,21 +140,21 @@ func (t *Tree) next() token {
 	return tok
 }
 
-// nextNonSpace returns the next non-whitespace token.
-func (t *Tree) nextNonSpace() token {
+// NextNonSpace returns the Next non-whitespace token.
+func (t *Tree) NextNonSpace() token {
 	var next token
 	for {
-		next = t.next()
-		if next.tokenType != tokenWhitespace {
+		next = t.Next()
+		if next.tokenType != TokenWhitespace {
 			return next
 		}
 	}
 }
 
-// expect returns the next non-space token. Additionally, if the token is not of one of the expected types,
+// Expect returns the Next non-space token. Additionally, if the token is not of one of the expected types,
 // an UnexpectedTokenError is returned.
-func (t *Tree) expect(typs ...tokenType) (token, error) {
-	tok := t.nextNonSpace()
+func (t *Tree) Expect(typs ...tokenType) (token, error) {
+	tok := t.NextNonSpace()
 	for _, typ := range typs {
 		if tok.tokenType == typ {
 			return tok, nil
@@ -163,11 +164,11 @@ func (t *Tree) expect(typs ...tokenType) (token, error) {
 	return tok, newUnexpectedTokenError(tok, typs...)
 }
 
-// expectValue returns the next non-space token, with additional checks on the value of the token.
+// ExpectValue returns the Next non-space token, with additional checks on the value of the token.
 // If the token is not of the expected type, an UnexpectedTokenError is returned. If the token is not the
 // expected value, an UnexpectedValueError is returned.
-func (t *Tree) expectValue(typ tokenType, val string) (token, error) {
-	tok, err := t.expect(typ)
+func (t *Tree) ExpectValue(typ tokenType, val string) (token, error) {
+	tok, err := t.Expect(typ)
 	if err != nil {
 		return tok, err
 	}
@@ -231,37 +232,37 @@ func (t *Tree) Parse() error {
 // parse is intended to pick up at the beginning of input, such as the start of a tag's body
 // or the more obvious start of a document.
 func (t *Tree) parse() (Node, error) {
-	tok := t.nextNonSpace()
+	tok := t.NextNonSpace()
 	switch tok.tokenType {
-	case tokenText:
+	case TokenText:
 		return NewTextNode(tok.value, tok.Pos), nil
 
-	case tokenPrintOpen:
-		name, err := t.parseExpr()
+	case TokenPrintOpen:
+		name, err := t.ParseExpr()
 		if err != nil {
 			return nil, err
 		}
-		_, err = t.expect(tokenPrintClose)
+		_, err = t.Expect(TokenPrintClose)
 		if err != nil {
 			return nil, err
 		}
 		return NewPrintNode(name, tok.Pos), nil
 
-	case tokenTagOpen:
+	case TokenTagOpen:
 		return t.parseTag()
 
-	case tokenCommentOpen:
-		tok, err := t.expect(tokenText)
+	case TokenCommentOpen:
+		tok, err := t.Expect(TokenText)
 		if err != nil {
 			return nil, err
 		}
-		_, err = t.expect(tokenCommentClose)
+		_, err = t.Expect(TokenCommentClose)
 		if err != nil {
 			return nil, err
 		}
 		return NewCommentNode(tok.value, tok.Pos), nil
 
-	case tokenEOF:
+	case TokenEOF:
 		// expected end of input
 		return nil, nil
 	}

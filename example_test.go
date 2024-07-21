@@ -7,7 +7,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/tyler-sommer/stick"
+	"github.com/tystuyfzand/stick"
 )
 
 // An example of executing a template in the simplest possible manner.
