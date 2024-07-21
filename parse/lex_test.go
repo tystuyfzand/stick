@@ -8,11 +8,11 @@ import (
 type lexTest struct {
 	name   string
 	input  string
-	tokens []token
+	tokens []Token
 }
 
-func mkTok(t tokenType, val string) token {
-	return token{val, t, Pos{0, 0}}
+func mkTok(t TokenType, val string) Token {
+	return Token{val, t, Pos{0, 0}}
 }
 
 var (
@@ -42,9 +42,9 @@ var (
 )
 
 var lexTests = []lexTest{
-	{"empty", "", []token{tEOF}},
+	{"empty", "", []Token{tEOF}},
 
-	{"comment", "Some text{# Hello there #}", []token{
+	{"comment", "Some text{# Hello there #}", []Token{
 		mkTok(TokenText, "Some text"),
 		tCommentOpen,
 		mkTok(TokenText, " Hello there "),
@@ -52,13 +52,13 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"unclosed comment", "{# Hello there", []token{
+	{"unclosed comment", "{# Hello there", []Token{
 		tCommentOpen,
 		mkTok(TokenText, " Hello there"),
 		mkTok(TokenError, "expected comment close"),
 	}},
 
-	{"number", "{{ 5 }}", []token{
+	{"number", "{{ 5 }}", []Token{
 		tPrintOpen,
 		tSpace,
 		mkTok(TokenNumber, "5"),
@@ -67,7 +67,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"operator", "{{\n5 == 4 ? 'Yes' : 'No'\n}}", []token{
+	{"operator", "{{\n5 == 4 ? 'Yes' : 'No'\n}}", []Token{
 		tPrintOpen,
 		tNewLine,
 		mkTok(TokenNumber, "5"),
@@ -92,7 +92,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"string with operator prefix", "{{ orange }}", []token{
+	{"string with operator prefix", "{{ orange }}", []Token{
 		tPrintOpen,
 		tSpace,
 		mkTok(TokenName, "orange"),
@@ -101,7 +101,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"power and multiply", "{{ 1 ** 10 * 5 }}", []token{
+	{"power and multiply", "{{ 1 ** 10 * 5 }}", []Token{
 		tPrintOpen,
 		tSpace,
 		mkTok(TokenNumber, "1"),
@@ -118,7 +118,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"div and floordiv", "{{ 10 // 4 / 2 }}", []token{
+	{"div and floordiv", "{{ 10 // 4 / 2 }}", []Token{
 		tPrintOpen,
 		tSpace,
 		mkTok(TokenNumber, "10"),
@@ -135,7 +135,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"is and is not", "{{ 1 is not 10 and 5 is 5 }}", []token{
+	{"is and is not", "{{ 1 is not 10 and 5 is 5 }}", []Token{
 		tPrintOpen,
 		tSpace,
 		mkTok(TokenNumber, "1"),
@@ -156,7 +156,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"word operators", "{{ name not in data }}", []token{
+	{"word operators", "{{ name not in data }}", []Token{
 		tPrintOpen,
 		tSpace,
 		mkTok(TokenName, "name"),
@@ -169,7 +169,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"unary not operator", "{{ not 100 }}", []token{
+	{"unary not operator", "{{ not 100 }}", []Token{
 		tPrintOpen,
 		tSpace,
 		mkTok(TokenOperator, "not"),
@@ -180,7 +180,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"unary negation operator", "{{ -100 }}", []token{
+	{"unary negation operator", "{{ -100 }}", []Token{
 		tPrintOpen,
 		tSpace,
 		mkTok(TokenOperator, "-"),
@@ -190,12 +190,12 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"text", "<html><head></head></html>", []token{
+	{"text", "<html><head></head></html>", []Token{
 		mkTok(TokenText, "<html><head></head></html>"),
 		tEOF,
 	}},
 
-	{"simple block", "{% block test %}Some text{% endblock %}", []token{
+	{"simple block", "{% block test %}Some text{% endblock %}", []Token{
 		tTagOpen,
 		tSpace,
 		mkTok(TokenName, "block"),
@@ -212,7 +212,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"print string", "{{ \"this is a test\" }}", []token{
+	{"print string", "{{ \"this is a test\" }}", []Token{
 		tPrintOpen,
 		tSpace,
 		tDblStringOpen,
@@ -223,14 +223,14 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"unclosed string", "{{ \"this is a test }}", []token{
+	{"unclosed string", "{{ \"this is a test }}", []Token{
 		tPrintOpen,
 		tSpace,
 		tDblStringOpen,
 		mkTok(TokenError, "unclosed string"),
 	}},
 
-	{"unclosed parens", "{{ (test + 5 }}", []token{
+	{"unclosed parens", "{{ (test + 5 }}", []Token{
 		tPrintOpen,
 		tSpace,
 		tParensOpen,
@@ -243,7 +243,7 @@ var lexTests = []lexTest{
 		mkTok(TokenError, "unclosed parenthesis"),
 	}},
 
-	{"unclosed tag (block)", "{% block test %}", []token{
+	{"unclosed tag (block)", "{% block test %}", []Token{
 		tTagOpen,
 		tSpace,
 		mkTok(TokenName, "block"),
@@ -254,7 +254,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"name with underscore", "{% block additional_javascripts %}", []token{
+	{"name with underscore", "{% block additional_javascripts %}", []Token{
 		tTagOpen,
 		tSpace,
 		mkTok(TokenName, "block"),
@@ -265,7 +265,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"string interpolation", `{{ "Hello, #{name}" }}`, []token{
+	{"string interpolation", `{{ "Hello, #{name}" }}`, []Token{
 		tPrintOpen,
 		tSpace,
 		tDblStringOpen,
@@ -279,7 +279,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"string interpolation", `{{ "Item #: #{item.id}<br>" }}`, []token{
+	{"string interpolation", `{{ "Item #: #{item.id}<br>" }}`, []Token{
 		tPrintOpen,
 		tSpace,
 		tDblStringOpen,
@@ -296,7 +296,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"whitespace control print", `{{- test -}}`, []token{
+	{"whitespace control print", `{{- test -}}`, []Token{
 		tPrintTrimOpen,
 		tSpace,
 		mkTok(TokenName, "test"),
@@ -305,7 +305,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"whitespace control tag", `{%- test -%}`, []token{
+	{"whitespace control tag", `{%- test -%}`, []Token{
 		tTagTrimOpen,
 		tSpace,
 		mkTok(TokenName, "test"),
@@ -314,7 +314,7 @@ var lexTests = []lexTest{
 		tEOF,
 	}},
 
-	{"whitespace control comment", `{#- test -#}`, []token{
+	{"whitespace control comment", `{#- test -#}`, []Token{
 		tCommentTrimOpen,
 		mkTok(TokenText, " test "),
 		tCommentTrimClose,
@@ -322,7 +322,7 @@ var lexTests = []lexTest{
 	}},
 }
 
-func collect(t *lexTest) (tokens []token) {
+func collect(t *lexTest) (tokens []Token) {
 	lex := newLexer(bytes.NewReader([]byte(t.input)))
 	go lex.tokenize()
 	for {
@@ -336,7 +336,7 @@ func collect(t *lexTest) (tokens []token) {
 	return
 }
 
-func equal(stream1, stream2 []token) bool {
+func equal(stream1, stream2 []Token) bool {
 	if len(stream1) != len(stream2) {
 		return false
 	}

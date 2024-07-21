@@ -43,17 +43,17 @@ func (e *parseError) sprintf(format string, a ...interface{}) string {
 	return fmt.Sprintf("parse: %s on line %d, column %d in %s", res, e.Line, e.Offset, e.name)
 }
 
-// UnexpectedTokenError is generated when the current token
+// UnexpectedTokenError is generated when the current Token
 // is not of the expected type.
 type UnexpectedTokenError struct {
 	baseError
-	actual   token
-	expected []tokenType
+	actual   Token
+	expected []TokenType
 }
 
 func (e *UnexpectedTokenError) Error() string {
 	if len(e.expected) == 0 {
-		return e.sprintf(`unexpected token "%s"`, e.actual.tokenType)
+		return e.sprintf(`unexpected Token "%s"`, e.actual.tokenType)
 	}
 	if len(e.expected) == 1 {
 		return e.sprintf(`expected "%s", got "%s"`, e.expected[0], e.actual.tokenType)
@@ -71,7 +71,7 @@ func (e *UnexpectedTokenError) Error() string {
 }
 
 // newUnexpectedTokenError returns a new UnexpectedTokenError
-func newUnexpectedTokenError(actual token, expected ...tokenType) error {
+func newUnexpectedTokenError(actual Token, expected ...TokenType) error {
 	return &UnexpectedTokenError{newBaseError(actual.Pos), actual, expected}
 }
 
@@ -100,14 +100,14 @@ func (e *UnexpectedEOFError) Error() string {
 }
 
 // newUnexpectedEOFError returns a new UnexpectedEOFError
-func newUnexpectedEOFError(tok token) error {
+func newUnexpectedEOFError(tok Token) error {
 	return &UnexpectedEOFError{newBaseError(tok.Pos)}
 }
 
-// UnexpectedValueError describes an invalid or unexpected value inside a token.
+// UnexpectedValueError describes an invalid or unexpected value inside a Token.
 type UnexpectedValueError struct {
 	baseError
-	tok token  // The actual token.
+	tok Token  // The actual Token.
 	val string // The expected value.
 }
 
@@ -116,7 +116,7 @@ func (e *UnexpectedValueError) Error() string {
 }
 
 // newUnexpectedValueError returns a new UnexpectedPunctuationError
-func newUnexpectedValueError(tok token, expected string) error {
+func newUnexpectedValueError(tok Token, expected string) error {
 	return &UnexpectedValueError{newBaseError(tok.Pos), tok, expected}
 }
 

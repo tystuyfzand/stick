@@ -8,11 +8,11 @@ import (
 	"unicode"
 )
 
-// tokenType defines a unique type of token
-type tokenType int
+// TokenType defines a unique type of Token
+type TokenType int
 
 const (
-	TokenEOF tokenType = iota
+	TokenEOF TokenType = iota
 	TokenText
 	TokenName
 	TokenNumber
@@ -38,7 +38,7 @@ const (
 	TokenError
 )
 
-var names = map[tokenType]string{
+var names = map[TokenType]string{
 	TokenText:             "TEXT",
 	TokenName:             "NAME",
 	TokenNumber:           "NUMBER",
@@ -65,7 +65,7 @@ var names = map[tokenType]string{
 	TokenEOF:              "EOF",
 }
 
-func (typ tokenType) String() string {
+func (typ TokenType) String() string {
 	return names[typ]
 }
 
@@ -83,14 +83,22 @@ const (
 	delimHashKeyValue     = ":"
 )
 
-type token struct {
+type Token struct {
 	value     string
-	tokenType tokenType
+	tokenType TokenType
 	Pos
 }
 
-func (tok token) String() string {
+func (tok Token) String() string {
 	return fmt.Sprintf("{%s '%s' %s}", tok.tokenType, tok.value, tok.Pos)
+}
+
+func (tok Token) Value() string {
+	return tok.value
+}
+
+func (tok Token) Type() TokenType {
+	return tok.tokenType
 }
 
 // stateFn may emit zero or more tokens.
@@ -112,15 +120,15 @@ type lexer struct {
 	line   int // The current line number
 	offset int // The current character offset on the current line
 	input  string
-	tokens chan token
+	tokens chan Token
 	state  stateFn
 	mode   mode
-	last   token // The last emitted token
+	last   Token // The last emitted Token
 	parens int   // Number of open parenthesis
 }
 
-// nextToken returns the next token emitted by the lexer.
-func (l *lexer) nextToken() token {
+// nextToken returns the next Token emitted by the lexer.
+func (l *lexer) nextToken() Token {
 	for v, ok := <-l.tokens; ok; {
 		l.last = v
 		return v
@@ -140,7 +148,7 @@ func (l *lexer) tokenize() {
 func newLexer(input io.Reader) *lexer {
 	// TODO: lexer should use the reader.
 	i, _ := ioutil.ReadAll(input)
-	return &lexer{0, 0, 1, 0, string(i), make(chan token), nil, modeNormal, token{}, 0}
+	return &lexer{0, 0, 1, 0, string(i), make(chan Token), nil, modeNormal, Token{}, 0}
 }
 
 func (l *lexer) next() (val string) {
@@ -166,15 +174,15 @@ func (l *lexer) peek() string {
 	return val
 }
 
-// emit will create a token with a value starting from the last emission
+// emit will create a Token with a value starting from the last emission
 // until the current cursor position.
-func (l *lexer) emit(t tokenType) {
+func (l *lexer) emit(t TokenType) {
 	val := ""
 	if l.pos <= len(l.input) {
 		val = l.input[l.start:l.pos]
 	}
 
-	tok := token{val, t, Pos{l.line, l.offset}}
+	tok := Token{val, t, Pos{l.line, l.offset}}
 
 	if c := strings.Count(val, "\n"); c > 0 {
 		l.line += c
@@ -193,7 +201,7 @@ func (l *lexer) emit(t tokenType) {
 }
 
 func (l *lexer) errorf(format string, args ...interface{}) stateFn {
-	tok := token{fmt.Sprintf(format, args...), TokenError, Pos{l.line, l.offset}}
+	tok := Token{fmt.Sprintf(format, args...), TokenError, Pos{l.line, l.offset}}
 	l.tokens <- tok
 
 	return nil
@@ -248,14 +256,14 @@ func lexExpression(l *lexer) stateFn {
 	case strings.HasPrefix(l.input[l.pos:], delimCloseTag),
 		strings.HasPrefix(l.input[l.pos:], delimTrimWhitespace+delimCloseTag):
 		if l.pos > l.start {
-			return l.errorf("pos > start, previous token not emitted?")
+			return l.errorf("pos > start, previous Token not emitted?")
 		}
 		return lexTagClose
 
 	case strings.HasPrefix(l.input[l.pos:], delimClosePrint),
 		strings.HasPrefix(l.input[l.pos:], delimTrimWhitespace+delimClosePrint):
 		if l.pos > l.start {
-			return l.errorf("pos > start, previous token not emitted?")
+			return l.errorf("pos > start, previous Token not emitted?")
 		}
 		return lexPrintClose
 
@@ -293,7 +301,7 @@ func (l *lexer) tryLexOperator() bool {
 	if op == "" {
 		return false
 	} else if op == "%" {
-		// Ensure this is not a tag close token "%}".
+		// Ensure this is not a tag close Token "%}".
 		// Go's regexp engine does not support negative lookahead.
 		if l.input[l.pos+1:l.pos+2] == "}" {
 			return false

@@ -11,7 +11,7 @@ import (
 type baseError struct {
 	parseError
 	debug      string
-	lastTokens []token
+	lastTokens []Token
 }
 
 func getTrace() string {
@@ -38,7 +38,7 @@ func (e *baseError) setTree(t *Tree) {
 }
 
 func newBaseError(p Pos) baseError {
-	return baseError{newParseError(p), getTrace(), make([]token, 0)}
+	return baseError{newParseError(p), getTrace(), make([]Token, 0)}
 }
 
 func (e *baseError) Debug() string {

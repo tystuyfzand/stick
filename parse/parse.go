@@ -21,8 +21,8 @@ type Tree struct {
 	blocks []map[string]*BlockNode // Contains each block available to this template.
 	macros map[string]*MacroNode   // All macros defined on this template.
 
-	unread []token // Any tokens received by the lexer but not yet read.
-	read   []token // Tokens that have already been read.
+	unread []Token // Any tokens received by the lexer but not yet read.
+	read   []Token // Tokens that have already been read.
 
 	Name string // A name identifying this tree; the template name.
 
@@ -44,8 +44,8 @@ func NewNamedTree(name string, input io.Reader) *Tree {
 		blocks: []map[string]*BlockNode{make(map[string]*BlockNode)},
 		macros: make(map[string]*MacroNode),
 
-		unread: make([]token, 0),
-		read:   make([]token, 0),
+		unread: make([]Token, 0),
+		read:   make([]Token, 0),
 
 		Name:     name,
 		Visitors: make([]NodeVisitor, 0),
@@ -88,17 +88,17 @@ func (t *Tree) enrichError(err error) error {
 	return err
 }
 
-// Peek returns the Next unread token without advancing the internal cursor.
-func (t *Tree) Peek() token {
+// Peek returns the Next unread Token without advancing the internal cursor.
+func (t *Tree) Peek() Token {
 	tok := t.Next()
 	t.backup()
 
 	return tok
 }
 
-// PeekNonSpace returns the Next unread, non-space token without advancing the internal cursor.
-func (t *Tree) PeekNonSpace() token {
-	var next token
+// PeekNonSpace returns the Next unread, non-space Token without advancing the internal cursor.
+func (t *Tree) PeekNonSpace() Token {
+	var next Token
 	for {
 		next = t.Next()
 		if next.tokenType != TokenWhitespace {
@@ -108,9 +108,9 @@ func (t *Tree) PeekNonSpace() token {
 	}
 }
 
-// backup pushes the last read token back onto the unread stack and reduces the internal cursor by one.
+// backup pushes the last read Token back onto the unread stack and reduces the internal cursor by one.
 func (t *Tree) backup() {
-	var tok token
+	var tok Token
 	tok, t.read = t.read[len(t.read)-1], t.read[:len(t.read)-1]
 	t.unread = append(t.unread, tok)
 }
@@ -126,9 +126,9 @@ func (t *Tree) backup3() {
 	t.backup()
 }
 
-// Next returns the Next unread token and advances the internal cursor by one.
-func (t *Tree) Next() token {
-	var tok token
+// Next returns the Next unread Token and advances the internal cursor by one.
+func (t *Tree) Next() Token {
+	var tok Token
 	if len(t.unread) > 0 {
 		tok, t.unread = t.unread[len(t.unread)-1], t.unread[:len(t.unread)-1]
 	} else {
@@ -140,9 +140,9 @@ func (t *Tree) Next() token {
 	return tok
 }
 
-// NextNonSpace returns the Next non-whitespace token.
-func (t *Tree) NextNonSpace() token {
-	var next token
+// NextNonSpace returns the Next non-whitespace Token.
+func (t *Tree) NextNonSpace() Token {
+	var next Token
 	for {
 		next = t.Next()
 		if next.tokenType != TokenWhitespace {
@@ -151,9 +151,9 @@ func (t *Tree) NextNonSpace() token {
 	}
 }
 
-// Expect returns the Next non-space token. Additionally, if the token is not of one of the expected types,
+// Expect returns the Next non-space Token. Additionally, if the Token is not of one of the expected types,
 // an UnexpectedTokenError is returned.
-func (t *Tree) Expect(typs ...tokenType) (token, error) {
+func (t *Tree) Expect(typs ...TokenType) (Token, error) {
 	tok := t.NextNonSpace()
 	for _, typ := range typs {
 		if tok.tokenType == typ {
@@ -164,10 +164,10 @@ func (t *Tree) Expect(typs ...tokenType) (token, error) {
 	return tok, newUnexpectedTokenError(tok, typs...)
 }
 
-// ExpectValue returns the Next non-space token, with additional checks on the value of the token.
-// If the token is not of the expected type, an UnexpectedTokenError is returned. If the token is not the
+// ExpectValue returns the Next non-space Token, with additional checks on the value of the Token.
+// If the Token is not of the expected type, an UnexpectedTokenError is returned. If the Token is not the
 // expected value, an UnexpectedValueError is returned.
-func (t *Tree) ExpectValue(typ tokenType, val string) (token, error) {
+func (t *Tree) ExpectValue(typ TokenType, val string) (Token, error) {
 	tok, err := t.Expect(typ)
 	if err != nil {
 		return tok, err
