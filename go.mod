@@ -1,5 +1,5 @@
-module github.com/tyler-sommer/stick
+module github.com/tystuyfzand/stick
 
 go 1.12
 
-require github.com/shopspring/decimal v1.3.1
+require github.com/shopspring/decimal v1.4.0
