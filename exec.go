@@ -216,7 +216,7 @@ func (s *State) Walk(node parse.Node) error {
 	switch node := node.(type) {
 	case *parse.ModuleNode:
 		if p := node.Parent; p != nil {
-			tplName, err := s.evalExpr(p.Tpl)
+			tplName, err := s.EvalExpr(p.Tpl)
 			if err != nil {
 				return err
 			}
@@ -251,7 +251,7 @@ func (s *State) Walk(node parse.Node) error {
 		_, err := io.WriteString(s.out, node.Data)
 		return err
 	case *parse.PrintNode:
-		v, err := s.evalExpr(node.X)
+		v, err := s.EvalExpr(node.X)
 		if err != nil {
 			return err
 		}
@@ -276,7 +276,7 @@ func (s *State) Walk(node parse.Node) error {
 		// TODO: It seems this should never occur.
 		return errors.New("Unable to locate block " + name)
 	case *parse.IfNode:
-		v, err := s.evalExpr(node.Cond)
+		v, err := s.EvalExpr(node.Cond)
 		if err != nil {
 			return err
 		}
@@ -351,7 +351,7 @@ func (s *State) walkChild(node parse.Node) error {
 }
 
 func (s *State) walkForNode(node *parse.ForNode) error {
-	res, err := s.evalExpr(node.X)
+	res, err := s.EvalExpr(node.X)
 	if err != nil {
 		return err
 	}
@@ -403,14 +403,14 @@ func (s *State) walkForNode(node *parse.ForNode) error {
 // Method walkInclude determines the necessary parameters for including or embedding a template.
 func (s *State) walkIncludeNode(node *parse.IncludeNode) (tpl string, ctx map[string]Value, err error) {
 	ctx = make(map[string]Value)
-	v, err := s.evalExpr(node.Tpl)
+	v, err := s.EvalExpr(node.Tpl)
 	if err != nil {
 		return "", nil, err
 	}
 	tpl = CoerceString(v)
 	var with Value
 	if n := node.With; n != nil {
-		with, err = s.evalExpr(n)
+		with, err = s.EvalExpr(n)
 		// TODO: Assert "with" is a hash?
 		if err != nil {
 			return "", nil, err
@@ -430,7 +430,7 @@ func (s *State) walkIncludeNode(node *parse.IncludeNode) (tpl string, ctx map[st
 }
 
 func (s *State) walkUseNode(node *parse.UseNode) error {
-	v, err := s.evalExpr(node.Tpl)
+	v, err := s.EvalExpr(node.Tpl)
 	if err != nil {
 		return err
 	}
@@ -474,7 +474,7 @@ func (s *State) walkSetNode(node *parse.SetNode) error {
 	case parse.Expr:
 		// evaluates the right side of a basic set statement
 		var err error
-		v, err = s.evalExpr(node.X)
+		v, err = s.EvalExpr(node.X)
 		if err != nil {
 			return err
 		}
@@ -487,7 +487,7 @@ func (s *State) walkSetNode(node *parse.SetNode) error {
 }
 
 func (s *State) walkDoNode(node *parse.DoNode) error {
-	_, err := s.evalExpr(node.X)
+	_, err := s.EvalExpr(node.X)
 	if err != nil {
 		return err
 	}
@@ -518,7 +518,7 @@ func (s *State) walkFilterNode(node *parse.FilterNode) error {
 }
 
 func (s *State) walkImportNode(node *parse.ImportNode) error {
-	tpl, err := s.evalExpr(node.Tpl)
+	tpl, err := s.EvalExpr(node.Tpl)
 	if err != nil {
 		return err
 	}
@@ -535,7 +535,7 @@ func (s *State) walkImportNode(node *parse.ImportNode) error {
 }
 
 func (s *State) walkFromNode(node *parse.FromNode) error {
-	tpl, err := s.evalExpr(node.Tpl)
+	tpl, err := s.EvalExpr(node.Tpl)
 	if err != nil {
 		return err
 	}
@@ -554,8 +554,8 @@ func (s *State) walkFromNode(node *parse.FromNode) error {
 	return nil
 }
 
-// Method evalExpr evaluates the given expression, returning a Value or error.
-func (s *State) evalExpr(exp parse.Expr) (v Value, e error) {
+// EvalExpr evaluates the given expression, returning a Value or error.
+func (s *State) EvalExpr(exp parse.Expr) (v Value, e error) {
 	switch exp := exp.(type) {
 	case *parse.NullExpr:
 		return nil, nil
@@ -579,9 +579,9 @@ func (s *State) evalExpr(exp parse.Expr) (v Value, e error) {
 	case *parse.StringExpr:
 		return exp.Text, nil
 	case *parse.GroupExpr:
-		return s.evalExpr(exp.X)
+		return s.EvalExpr(exp.X)
 	case *parse.UnaryExpr:
-		in, err := s.evalExpr(exp.X)
+		in, err := s.EvalExpr(exp.X)
 		if err != nil {
 			return nil, err
 		}
@@ -595,11 +595,11 @@ func (s *State) evalExpr(exp parse.Expr) (v Value, e error) {
 			return -CoerceNumber(in), nil
 		}
 	case *parse.BinaryExpr:
-		left, err := s.evalExpr(exp.Left)
+		left, err := s.EvalExpr(exp.Left)
 		if err != nil {
 			return nil, err
 		}
-		right, err := s.evalExpr(exp.Right)
+		right, err := s.EvalExpr(exp.Right)
 		if err != nil {
 			return nil, err
 		}
@@ -685,18 +685,18 @@ func (s *State) evalExpr(exp parse.Expr) (v Value, e error) {
 	case *parse.FilterExpr:
 		return s.evalFilter(exp)
 	case *parse.GetAttrExpr:
-		c, err := s.evalExpr(exp.Cont)
+		c, err := s.EvalExpr(exp.Cont)
 		if err != nil {
 			return nil, err
 		}
-		k, err := s.evalExpr(exp.Attr)
+		k, err := s.EvalExpr(exp.Attr)
 		if err != nil {
 			return nil, err
 		}
 		exargs := exp.Args
 		args := make([]Value, len(exargs))
 		for k, e := range exargs {
-			v, err := s.evalExpr(e)
+			v, err := s.EvalExpr(e)
 			if err != nil {
 				return nil, err
 			}
@@ -725,7 +725,7 @@ func (s *State) evalExpr(exp parse.Expr) (v Value, e error) {
 			eargs := exp.Args
 			args := make([]Value, len(eargs))
 			for i, e := range eargs {
-				v, err := s.evalExpr(e)
+				v, err := s.EvalExpr(e)
 				if err != nil {
 					return nil, err
 				}
@@ -737,14 +737,14 @@ func (s *State) evalExpr(exp parse.Expr) (v Value, e error) {
 		}
 		return nil, fmt.Errorf(`unknown test "%v"`, exp.Name)
 	case *parse.TernaryIfExpr:
-		cond, err := s.evalExpr(exp.Cond)
+		cond, err := s.EvalExpr(exp.Cond)
 		if err != nil {
 			return nil, err
 		}
 		if CoerceBool(cond) == true {
-			return s.evalExpr(exp.TrueX)
+			return s.EvalExpr(exp.TrueX)
 		}
-		return s.evalExpr(exp.FalseX)
+		return s.EvalExpr(exp.FalseX)
 
 	case *parse.HashExpr:
 		vals := make(map[string]Value)
@@ -754,12 +754,12 @@ func (s *State) evalExpr(exp parse.Expr) (v Value, e error) {
 			if k, ok := v.Key.(*parse.NameExpr); ok {
 				key = k.Name
 			} else {
-				key, err = s.evalExpr(v.Key)
+				key, err = s.EvalExpr(v.Key)
 				if err != nil {
 					return nil, err
 				}
 			}
-			val, err := s.evalExpr(v.Value)
+			val, err := s.EvalExpr(v.Value)
 			if err != nil {
 				return nil, err
 			}
@@ -770,7 +770,7 @@ func (s *State) evalExpr(exp parse.Expr) (v Value, e error) {
 	case *parse.ArrayExpr:
 		vals := make([]Value, len(exp.Elements))
 		for i, v := range exp.Elements {
-			val, err := s.evalExpr(v)
+			val, err := s.EvalExpr(v)
 			if err != nil {
 				return nil, err
 			}
@@ -809,7 +809,7 @@ func (s *State) evalFunction(exp *parse.FuncExpr) (Value, error) {
 		if len(eargs) != 1 {
 			return nil, errors.New("block expects one parameter")
 		}
-		val, err := s.evalExpr(eargs[0])
+		val, err := s.EvalExpr(eargs[0])
 		if err != nil {
 			return nil, err
 		}
@@ -831,7 +831,7 @@ func (s *State) evalFunction(exp *parse.FuncExpr) (Value, error) {
 		eargs := exp.Args
 		args := make([]Value, len(eargs))
 		for i, e := range eargs {
-			v, err := s.evalExpr(e)
+			v, err := s.EvalExpr(e)
 			if err != nil {
 				return nil, err
 			}
@@ -843,7 +843,7 @@ func (s *State) evalFunction(exp *parse.FuncExpr) (Value, error) {
 		eargs := exp.Args
 		args := make([]Value, len(eargs))
 		for i, e := range eargs {
-			v, err := s.evalExpr(e)
+			v, err := s.EvalExpr(e)
 			if err != nil {
 				return nil, err
 			}
@@ -863,7 +863,7 @@ func (s *State) evalFilter(exp *parse.FilterExpr) (Value, error) {
 		}
 		args := make([]Value, len(eargs))
 		for i, e := range eargs {
-			v, err := s.evalExpr(e)
+			v, err := s.EvalExpr(e)
 			if err != nil {
 				return nil, err
 			}
