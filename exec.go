@@ -13,10 +13,10 @@ import (
 	"github.com/tyler-sommer/stick/parse"
 )
 
-// Type state represents the internal state of a template execution.
+// Type State represents the internal State of a template execution.
 //
-// state implements the exported Context interface.
-type state struct {
+// State implements the exported Context interface.
+type State struct {
 	out  io.Writer  // Output.
 	node parse.Node // Current node.
 
@@ -33,9 +33,9 @@ type state struct {
 	scope *scopeStack // Handles execution scope.
 }
 
-// newState creates a new template execution state, ready for use.
-func newState(name string, out io.Writer, ctx map[string]Value, env *Env) *state {
-	return &state{
+// NewState creates a new template execution State, ready for use.
+func NewState(name string, out io.Writer, ctx map[string]Value, env *Env) *State {
+	return &State{
 		out:  out,
 		node: nil,
 
@@ -55,33 +55,33 @@ func newState(name string, out io.Writer, ctx map[string]Value, env *Env) *state
 // A selfValue represents the special `_self` variable.
 type selfValue map[string]Value
 
-func (s *state) self() selfValue {
+func (s *State) self() selfValue {
 	return selfValue{
 		"templateName": s.name,
 		"TemplateName": s.name,
 	}
 }
 
-func (s *state) Env() *Env {
+func (s *State) Env() *Env {
 	return s.env
 }
 
-func (s *state) Name() string {
+func (s *State) Name() string {
 	return s.name
 }
 
-func (s *state) Scope() ContextScope {
+func (s *State) Scope() ContextScope {
 	return s.scope
 }
 
-func (s *state) Meta() ContextMetadata {
+func (s *State) Meta() ContextMetadata {
 	return s.meta
 }
 
 // noexport satisfies the Context interface.
-func (s *state) noexport() {}
+func (s *State) noexport() {}
 
-// metadata contains extra information about the state.
+// metadata contains extra information about the State.
 //
 // metadata implements the exported ContextMetadata interface.
 type metadata struct {
@@ -188,7 +188,7 @@ func (s *scopeStack) setLocal(name string, val Value) {
 
 // Method getBlock iterates through each set of blocks, returning the first
 // block with the given name.
-func (s *state) getBlock(name string) *parse.BlockNode {
+func (s *State) getBlock(name string) *parse.BlockNode {
 	for _, blocks := range s.blocks {
 		if block, ok := blocks[name]; ok {
 			return block
@@ -198,7 +198,7 @@ func (s *state) getBlock(name string) *parse.BlockNode {
 	return nil
 }
 
-func (s *state) getParentBlock(name string) *parse.BlockNode {
+func (s *State) getParentBlock(name string) *parse.BlockNode {
 	rootFound := false
 	for _, blocks := range s.blocks {
 		if block, ok := blocks[name]; ok {
@@ -211,8 +211,8 @@ func (s *state) getParentBlock(name string) *parse.BlockNode {
 	return nil
 }
 
-// Method walk is the main entry-point into template execution.
-func (s *state) walk(node parse.Node) error {
+// Walk is the main entry-point into template execution.
+func (s *State) Walk(node parse.Node) error {
 	switch node := node.(type) {
 	case *parse.ModuleNode:
 		if p := node.Parent; p != nil {
@@ -234,12 +234,12 @@ func (s *state) walk(node parse.Node) error {
 			if err != nil {
 				return err
 			}
-			return s.walk(tree.Root())
+			return s.Walk(tree.Root())
 		}
-		return s.walk(node.BodyNode)
+		return s.Walk(node.BodyNode)
 	case *parse.BodyNode:
 		for _, c := range node.All() {
-			err := s.walk(c)
+			err := s.Walk(c)
 			if err != nil {
 				return err
 			}
@@ -271,7 +271,7 @@ func (s *state) walk(node parse.Node) error {
 			defer func() {
 				s.current = prev
 			}()
-			return s.walk(block.Body)
+			return s.Walk(block.Body)
 		}
 		// TODO: It seems this should never occur.
 		return errors.New("Unable to locate block " + name)
@@ -281,9 +281,9 @@ func (s *state) walk(node parse.Node) error {
 			return err
 		}
 		if CoerceBool(v) {
-			return s.walk(node.Body)
+			return s.Walk(node.Body)
 		} else {
-			return s.walk(node.Else)
+			return s.Walk(node.Else)
 		}
 	case *parse.IncludeNode:
 		tpl, ctx, err := s.walkIncludeNode(node)
@@ -299,13 +299,13 @@ func (s *state) walk(node parse.Node) error {
 		if err != nil {
 			return err
 		}
-		si := newState(tpl, s.out, ctx, s.env)
+		si := NewState(tpl, s.out, ctx, s.env)
 		tree, err := s.env.load(tpl)
 		if err != nil {
 			return err
 		}
 		si.blocks = append(s.blocks, node.Blocks, tree.Blocks())
-		err = si.walk(tree.Root())
+		err = si.Walk(tree.Root())
 		if err != nil {
 			return err
 		}
@@ -332,7 +332,7 @@ func (s *state) walk(node parse.Node) error {
 }
 
 // walkChild only executes a subset of nodes, intended to be used on child templates.
-func (s *state) walkChild(node parse.Node) error {
+func (s *State) walkChild(node parse.Node) error {
 	switch node := node.(type) {
 	case *parse.BodyNode:
 		for _, c := range node.All() {
@@ -350,7 +350,7 @@ func (s *state) walkChild(node parse.Node) error {
 	return nil
 }
 
-func (s *state) walkForNode(node *parse.ForNode) error {
+func (s *State) walkForNode(node *parse.ForNode) error {
 	res, err := s.evalExpr(node.X)
 	if err != nil {
 		return err
@@ -385,7 +385,7 @@ func (s *state) walkForNode(node *parse.ForNode) error {
 
 		s.scope.setLocal("loop", loopValue)
 
-		err := s.walk(node.Body)
+		err := s.Walk(node.Body)
 		if err != nil {
 			return true, err
 		}
@@ -395,13 +395,13 @@ func (s *state) walkForNode(node *parse.ForNode) error {
 		return err
 	}
 	if ct == 0 {
-		return s.walk(node.Else)
+		return s.Walk(node.Else)
 	}
 	return nil
 }
 
 // Method walkInclude determines the necessary parameters for including or embedding a template.
-func (s *state) walkIncludeNode(node *parse.IncludeNode) (tpl string, ctx map[string]Value, err error) {
+func (s *State) walkIncludeNode(node *parse.IncludeNode) (tpl string, ctx map[string]Value, err error) {
 	ctx = make(map[string]Value)
 	v, err := s.evalExpr(node.Tpl)
 	if err != nil {
@@ -429,7 +429,7 @@ func (s *state) walkIncludeNode(node *parse.IncludeNode) (tpl string, ctx map[st
 	return tpl, ctx, err
 }
 
-func (s *state) walkUseNode(node *parse.UseNode) error {
+func (s *State) walkUseNode(node *parse.UseNode) error {
 	v, err := s.evalExpr(node.Tpl)
 	if err != nil {
 		return err
@@ -453,7 +453,7 @@ func (s *state) walkUseNode(node *parse.UseNode) error {
 	return nil
 }
 
-func (s *state) walkSetNode(node *parse.SetNode) error {
+func (s *State) walkSetNode(node *parse.SetNode) error {
 	var v Value
 	switch node.X.(type) {
 	case *parse.BodyNode:
@@ -466,7 +466,7 @@ func (s *state) walkSetNode(node *parse.SetNode) error {
 		}()
 		buf := &bytes.Buffer{}
 		s.out = buf
-		err := s.walk(node.X)
+		err := s.Walk(node.X)
 		if err != nil {
 			return err
 		}
@@ -486,7 +486,7 @@ func (s *state) walkSetNode(node *parse.SetNode) error {
 	return nil
 }
 
-func (s *state) walkDoNode(node *parse.DoNode) error {
+func (s *State) walkDoNode(node *parse.DoNode) error {
 	_, err := s.evalExpr(node.X)
 	if err != nil {
 		return err
@@ -494,14 +494,14 @@ func (s *state) walkDoNode(node *parse.DoNode) error {
 	return nil
 }
 
-func (s *state) walkFilterNode(node *parse.FilterNode) error {
+func (s *State) walkFilterNode(node *parse.FilterNode) error {
 	prevBuf := s.out
 	defer func() {
 		s.out = prevBuf
 	}()
 	buf := &bytes.Buffer{}
 	s.out = buf
-	err := s.walk(node.Body)
+	err := s.Walk(node.Body)
 	if err != nil {
 		return err
 	}
@@ -517,7 +517,7 @@ func (s *state) walkFilterNode(node *parse.FilterNode) error {
 	return nil
 }
 
-func (s *state) walkImportNode(node *parse.ImportNode) error {
+func (s *State) walkImportNode(node *parse.ImportNode) error {
 	tpl, err := s.evalExpr(node.Tpl)
 	if err != nil {
 		return err
@@ -534,7 +534,7 @@ func (s *state) walkImportNode(node *parse.ImportNode) error {
 	return nil
 }
 
-func (s *state) walkFromNode(node *parse.FromNode) error {
+func (s *State) walkFromNode(node *parse.FromNode) error {
 	tpl, err := s.evalExpr(node.Tpl)
 	if err != nil {
 		return err
@@ -555,7 +555,7 @@ func (s *state) walkFromNode(node *parse.FromNode) error {
 }
 
 // Method evalExpr evaluates the given expression, returning a Value or error.
-func (s *state) evalExpr(exp parse.Expr) (v Value, e error) {
+func (s *State) evalExpr(exp parse.Expr) (v Value, e error) {
 	switch exp := exp.(type) {
 	case *parse.NullExpr:
 		return nil, nil
@@ -785,7 +785,7 @@ func (s *state) evalExpr(exp parse.Expr) (v Value, e error) {
 	return v, nil
 }
 
-func (s *state) evalFunction(exp *parse.FuncExpr) (Value, error) {
+func (s *State) evalFunction(exp *parse.FuncExpr) (Value, error) {
 	fnName := exp.Name
 	switch fnName {
 	case "parent":
@@ -797,7 +797,7 @@ func (s *state) evalFunction(exp *parse.FuncExpr) (Value, error) {
 			pout := s.out
 			buf := &bytes.Buffer{}
 			s.out = buf
-			if err := s.walk(blk.Body); err != nil {
+			if err := s.Walk(blk.Body); err != nil {
 				return nil, err
 			}
 			s.out = pout
@@ -818,7 +818,7 @@ func (s *state) evalFunction(exp *parse.FuncExpr) (Value, error) {
 			pout := s.out
 			buf := &bytes.Buffer{}
 			s.out = buf
-			err = s.walk(blk.Body)
+			err = s.Walk(blk.Body)
 			if err != nil {
 				return nil, err
 			}
@@ -854,7 +854,7 @@ func (s *state) evalFunction(exp *parse.FuncExpr) (Value, error) {
 	return nil, errors.New("Undeclared function \"" + fnName + "\"")
 }
 
-func (s *state) evalFilter(exp *parse.FilterExpr) (Value, error) {
+func (s *State) evalFilter(exp *parse.FilterExpr) (Value, error) {
 	ftName := exp.Name
 	if fn, ok := s.env.Filters[ftName]; ok {
 		eargs := exp.Args
@@ -882,7 +882,7 @@ type macroSet struct {
 	defs map[string]macroDef
 }
 
-func (s *state) callMacro(macro macroDef, args ...Value) (Value, error) {
+func (s *State) callMacro(macro macroDef, args ...Value) (Value, error) {
 	s.scope.push()
 	defer s.scope.pop()
 	for i, name := range macro.Args {
@@ -903,7 +903,7 @@ func (s *state) callMacro(macro macroDef, args ...Value) (Value, error) {
 		}(s.name)
 		s.name = macro.Origin
 	}
-	err := s.walk(macro.Body)
+	err := s.Walk(macro.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -915,13 +915,13 @@ func execute(name string, out io.Writer, ctx map[string]Value, env *Env) error {
 	if ctx == nil {
 		ctx = make(map[string]Value)
 	}
-	s := newState(name, out, ctx, env)
+	s := NewState(name, out, ctx, env)
 	tree, err := s.env.load(name)
 	if err != nil {
 		return err
 	}
 	s.blocks = append(s.blocks, tree.Blocks())
-	err = s.walk(tree.Root())
+	err = s.Walk(tree.Root())
 	if err != nil {
 		return err
 	}

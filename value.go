@@ -289,7 +289,7 @@ func getMethod(v Value, name string) (reflect.Value, error) {
 // An Iteratee is called for each step in a loop.
 type Iteratee func(k, v Value, l Loop) (brk bool, err error)
 
-// Loop contains metadata about the current state of a loop.
+// Loop contains metadata about the current State of a loop.
 type Loop struct {
 	Last      bool
 	Index     int
