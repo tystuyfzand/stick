@@ -93,6 +93,7 @@ func New(loader Loader) *Env {
 		Filters:   make(map[string]Filter),
 		Tests:     make(map[string]Test),
 		Visitors:  make([]parse.NodeVisitor, 0),
+		Parsers:   make(map[string]parse.TagParser),
 	}
 }
 
